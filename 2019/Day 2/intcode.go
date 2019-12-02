@@ -18,7 +18,7 @@ func main() {
 
 	integerStrings := strings.Split(program, ",")
 
-	integers := make([]int64, 0, len(integerStrings))
+	initialMemory := make([]int64, 0, len(integerStrings))
 
 	args := os.Args[1:]
 
@@ -26,8 +26,18 @@ func main() {
 	var noun int64 = 0
 	var verb int64 = 0
 
+	solving := false
+	var target int64 = 0
+
 	switch len(args) {
 	case 0:
+	case 1:
+		var err error
+		target, err = strconv.ParseInt(args[0], 10, 64)
+		if err != nil {
+			panic(fmt.Errorf("target was not an integer %s", args[0]))
+		}
+		solving = true
 	case 2:
 		var err error
 		noun, err = strconv.ParseInt(args[0], 10, 64)
@@ -47,42 +57,60 @@ func main() {
 		if err != nil {
 			panic(fmt.Errorf("failed to parse integer %s", integerString))
 		}
-		integers = append(integers, integer)
+		initialMemory = append(initialMemory, integer)
+	}
+
+	if solving {
+		for noun = 0; noun <= 99; noun++ {
+			for verb = 0; verb <= 99; verb++ {
+				memory := make([]int64, len(initialMemory))
+				copy(memory, initialMemory)
+				memory[1] = noun
+				memory[2] = verb
+				runProgram(memory)
+				if memory[0] == target {
+					fmt.Printf("found noun %v and verb %v", noun, verb)
+					return
+				}
+			}
+		}
 	}
 
 	if paramsProvided {
-		integers[1] = noun
-		integers[2] = verb
+		initialMemory[1] = noun
+		initialMemory[2] = verb
 	}
 
-	for i := 0; i < len(integers); i += 4 {
-		opcode := integers[i]
-		end := false
+	err := runProgram(initialMemory)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("%v", initialMemory)
+}
+
+func runProgram (memory []int64) error {
+	for i := 0; i < len(memory); i += 4 {
+		opcode := memory[i]
 
 		switch opcode {
 		case 1:
-			op1 := integers[i+1]
-			op2 := integers[i+2]
-			op3 := integers[i+3]
+			op1 := memory[i+1]
+			op2 := memory[i+2]
+			op3 := memory[i+3]
 
-			integers[op3] = integers[op1] + integers[op2]
+			memory[op3] = memory[op1] + memory[op2]
 		case 2:
-			op1 := integers[i+1]
-			op2 := integers[i+2]
-			op3 := integers[i+3]
+			op1 := memory[i+1]
+			op2 := memory[i+2]
+			op3 := memory[i+3]
 
-			integers[op3] = integers[op1] * integers[op2]
+			memory[op3] = memory[op1] * memory[op2]
 		case 99:
-			end = true
+			return nil
 		default:
-			fmt.Println(fmt.Errorf("unknown opcode %v at position %v", opcode, i))
-			end = true
-		}
-
-		if end {
-			break
+			return fmt.Errorf("unknown opcode %v at position %v", opcode, i)
 		}
 	}
-
-	fmt.Printf("%v", integers)
+	return nil
 }
