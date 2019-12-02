@@ -16,7 +16,14 @@ func main() {
 		if err != nil {
 			continue
 		}
-		requiredFuelMass += (payloadMass/3)-2
+		for {
+			payloadFuelMass := (payloadMass / 3) - 2
+			if payloadFuelMass <= 0 {
+				break
+			}
+			payloadMass = payloadFuelMass
+			requiredFuelMass += payloadFuelMass
+		}
 	}
 
 	fmt.Print(requiredFuelMass)
